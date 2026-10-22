@@ -16,7 +16,20 @@ def analisar_chamado_json(texto: str) -> dict:
         "- financeiro: pagamentos, faturas, "
         "reembolsos e notas fiscais.\n"
         "- comercial: vendas, orçamentos, "
-        "propostas e negociações.\n\n"
+        "propostas e negociações.\n\n"       
+        
+        "REGRAS DE PRIORIDADE:\n"
+"- alta: serviço crítico indisponível, "
+"vários usuários afetados ou impacto "
+"operacional grave explicitamente informado.\n"
+"- media: problema que impede ou prejudica "
+"o trabalho de uma pessoa, sem impacto "
+"crítico comprovado.\n"
+"- baixa: solicitação rotineira, sem urgência "
+"ou bloqueio de trabalho.\n"
+"Não presuma impacto crítico quando "
+"ele não estiver descrito.\n\n"
+
 
         "Exemplos:\n"
         "Chamado: Não consigo acessar meu e-mail.\n"
