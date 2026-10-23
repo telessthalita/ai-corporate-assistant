@@ -1,4 +1,3 @@
-
 from typing import Literal
 
 Prioridade = Literal["baixa", "media", "alta"]

@@ -1,7 +1,5 @@
-
 from sqlalchemy.exc import SQLAlchemyError
-from database import testar_conexao
-
+from app.core.database import testar_conexao
 
 try:
     resultado = testar_conexao()

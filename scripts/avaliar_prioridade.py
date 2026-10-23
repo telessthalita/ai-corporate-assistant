@@ -1,5 +1,4 @@
-
-from servico_ia import analisar_chamado_json
+from app.services.ia import analisar_chamado_json
 
 
 casos = [

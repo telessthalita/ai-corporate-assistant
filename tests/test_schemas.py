@@ -1,7 +1,6 @@
-
 import pytest
 from pydantic import ValidationError
-from schemas import ClassificacaoChamado
+from app.schemas.chamado import ClassificacaoChamado
 
 
 def test_classificacao_valida():

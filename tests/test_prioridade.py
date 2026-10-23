@@ -1,7 +1,9 @@
-
 import pytest
 
-from prioridade import definir_prioridade
+from app.services.prioridade import (
+    decidir_encaminhamento,
+    definir_prioridade
+)
 
 
 @pytest.mark.parametrize(
@@ -23,9 +25,6 @@ def test_definir_prioridade(
     )
 
     assert resultado == esperado
-
-
-from prioridade import decidir_encaminhamento
 
 
 def test_revisao_humana():

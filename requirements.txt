@@ -1,2 +1,6 @@
-pytest
 fastapi[standard]
+sqlalchemy>=2.0
+psycopg[binary]
+python-dotenv
+requests
+pytest

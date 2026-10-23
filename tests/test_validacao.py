@@ -1,5 +1,6 @@
+import pytest
 
-from validacao import validar_resposta
+from app.services.validacao import validar_resposta
 
 
 def test_confianca_alta():
@@ -35,8 +36,6 @@ def test_limite_personalizado():
     assert resultado == "Aprovado"
     
 
-
-import pytest
 
 @pytest.mark.parametrize(
     "confianca, esperado",

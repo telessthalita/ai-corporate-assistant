@@ -1,6 +1,7 @@
+from unittest.mock import patch
 
 from fastapi.testclient import TestClient
-from main import app
+from app.main import app
 
 client = TestClient(app)
 
@@ -41,7 +42,6 @@ def test_confianca_fora_intervalo():
     assert resposta.status_code == 422
     
     
-from unittest.mock import patch
 
 
 def test_classificar_chamado():
@@ -52,7 +52,7 @@ def test_classificar_chamado():
     }
 
     with patch(
-        "main.analisar_chamado_json",
+        "app.main.analisar_chamado_json",
         return_value=resposta_simulada
     ):
         resposta = client.post(
@@ -65,4 +65,3 @@ def test_classificar_chamado():
     assert resposta.status_code == 200
 
     assert resposta.json() == resposta_simulada
-

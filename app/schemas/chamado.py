@@ -1,7 +1,8 @@
-
-from typing import Literal
-from pydantic import BaseModel, ConfigDict, Field
 from datetime import datetime
+from typing import Literal
+
+from pydantic import BaseModel, ConfigDict, Field
+
 
 class ClassificacaoChamado(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -19,6 +20,20 @@ class ClassificacaoChamado(BaseModel):
     ]
 
     resumo: str = Field(min_length=5)
+
+
+class RespostaIA(BaseModel):
+    confianca: float = Field(
+        strict=True,
+        ge=0,
+        le=1
+    )
+
+    categoria: str
+
+
+class NovoChamado(BaseModel):
+    texto: str
 
 
 class ChamadoCriar(BaseModel):
