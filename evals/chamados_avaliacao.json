@@ -1,0 +1,77 @@
+[
+    {
+        "id": 1,
+        "texto": "Não consigo acessar meu e-mail corporativo.",
+        "categoria_esperada": "suporte"
+    },
+    {
+        "id": 2,
+        "texto": "Preciso da segunda via do boleto.",
+        "categoria_esperada": "financeiro"
+    },
+    {
+        "id": 3,
+        "texto": "Gostaria de contratar um novo serviço.",
+        "categoria_esperada": "comercial"
+    },
+    {
+        "id": 4,
+        "texto": "Meu pagamento foi realizado, mas a cobrança continua em aberto.",
+        "categoria_esperada": "financeiro"
+    },
+    {
+        "id": 5,
+        "texto": "O sistema apresenta erro ao gerar a nota fiscal.",
+        "categoria_esperada": "suporte"
+    },
+    {
+        "id": 6,
+        "texto": "Quero conhecer os planos disponíveis para minha empresa.",
+        "categoria_esperada": "comercial"
+    },
+    {
+        "id": 7,
+        "texto": "Não consigo acessar a plataforma para consultar minhas faturas.",
+        "categoria_esperada": "suporte"
+    },
+    {
+        "id": 8,
+        "texto": "O valor da mensalidade veio diferente do contratado.",
+        "categoria_esperada": "financeiro"
+    },
+    {
+        "id": 9,
+        "texto": "Gostaria de aumentar a quantidade de usuários do meu plano.",
+        "categoria_esperada": "comercial"
+    },
+    {
+        "id": 10,
+        "texto": "Minha conta foi bloqueada depois de uma tentativa de pagamento.",
+        "categoria_esperada": "suporte"
+    },
+    {
+        "id": 11,
+        "texto": "Não consigo entrar na minha conta para pagar uma fatura.",
+        "categoria_esperada": "suporte"
+    },
+    {
+        "id": 12,
+        "texto": "Meu pagamento foi aprovado, mas a cobrança continua pendente.",
+        "categoria_esperada": "financeiro"
+    },
+    {
+        "id": 13,
+        "texto": "Quero contratar um plano com mais usuários.",
+        "categoria_esperada": "comercial"
+    },
+    {
+        "id": 14,
+        "texto": "O sistema trava quando tento visualizar meus boletos.",
+        "categoria_esperada": "suporte"
+    },
+    {
+        "id": 15,
+        "texto": "Gostaria de negociar um desconto para renovar meu contrato.",
+        "categoria_esperada": "comercial"
+    }
+]
