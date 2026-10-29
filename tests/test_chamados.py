@@ -10,6 +10,7 @@ from sqlalchemy.pool import StaticPool
 from app.core.database import Base, obter_db
 from app.main import app
 
+from app.models.auditoria import AuditoriaChamado
 
 @pytest.fixture
 def client():
@@ -324,3 +325,73 @@ def test_revisao_nao_apaga_prioridade(client):
     )
 
     assert chamado["prioridade"] == "alta"
+
+def test_historico_duas_alteracoes_prioridade(client):
+    # 1. Criar o chamado
+    criacao = client.post(
+        "/chamados",
+        json={
+            "descricao": "Sistema corporativo indisponível"
+        }
+    )
+
+    assert criacao.status_code == 201
+    chamado_id = criacao.json()["id"]
+
+    # 2. Primeira decisão: alta
+    primeira = client.post(
+        f"/chamados/{chamado_id}/avaliar-prioridade",
+        json={
+            "impacto": "critico",
+            "bloqueia_trabalho": True,
+            "solicitacao_rotineira": False
+        }
+    )
+
+    assert primeira.status_code == 200
+    assert primeira.json()["prioridade"] == "alta"
+
+    # 3. Segunda decisão: média
+    segunda = client.post(
+        f"/chamados/{chamado_id}/avaliar-prioridade",
+        json={
+            "impacto": "moderado",
+            "bloqueia_trabalho": True,
+            "solicitacao_rotineira": False
+        }
+    )
+
+    assert segunda.status_code == 200
+    assert segunda.json()["prioridade"] == "media"
+
+    # 4. Consultar o histórico
+    resposta = client.get(
+        f"/chamados/{chamado_id}/auditoria"
+    )
+
+    assert resposta.status_code == 200
+
+    historico = resposta.json()
+
+    assert len(historico) == 2
+
+    assert historico[0]["valor_anterior"] is None
+    assert historico[0]["valor_novo"] == "alta"
+
+    assert historico[1]["valor_anterior"] == "alta"
+    assert historico[1]["valor_novo"] == "media"
+
+    assert all(
+        evento["origem"] == "motor_regras"
+        for evento in historico
+    )
+
+    # 5. Confirmar o estado atual no banco
+    consulta = client.get("/chamados")
+
+    chamado = next(
+        item for item in consulta.json()
+        if item["id"] == chamado_id
+    )
+
+    assert chamado["prioridade"] == "media"

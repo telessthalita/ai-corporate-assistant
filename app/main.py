@@ -8,6 +8,8 @@ from app.services.motor_decisao import avaliar_prioridade
 from app.repositories.chamados import buscar_chamado
 from app.repositories.chamados import salvar_prioridade
 
+from app.repositories.chamados import listar_auditoria
+from app.schemas.chamado import AuditoriaResposta
 from app.core.database import obter_db
 from app.repositories.chamados import (
     criar_chamado,
@@ -187,3 +189,25 @@ def avaliar_prioridade_chamado(
         )
 
     return resultado
+
+
+@app.get(
+    "/chamados/{chamado_id}/auditoria",
+    response_model=list[AuditoriaResposta]
+)
+def consultar_auditoria(
+    chamado_id: int,
+    db: Session = Depends(obter_db)
+):
+    chamado = buscar_chamado(db, chamado_id)
+
+    if chamado is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Chamado não encontrado"
+        )
+
+    return listar_auditoria(
+        db=db,
+        chamado_id=chamado_id
+    )

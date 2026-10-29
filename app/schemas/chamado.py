@@ -67,3 +67,15 @@ class ResultadoPrioridade(BaseModel):
     revisao_humana: bool
     motivo: str
 
+
+class AuditoriaResposta(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    chamado_id: int
+    acao: str
+    valor_anterior: str | None
+    valor_novo: str | None
+    origem: str
+    motivo: str
+    criado_em: datetime

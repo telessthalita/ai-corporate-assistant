@@ -1,5 +1,7 @@
+
 from app.core.database import Base, engine
-import app.models.chamado  # noqa: F401 (registra o modelo no Base)
+from app.models.chamado import Chamado
+from app.models.auditoria import AuditoriaChamado
 
 
 def criar_tabelas():
