@@ -1,0 +1,62 @@
+[
+    {
+        "id": 1,
+        "texto": "Recebi um aviso de cobrança duplicada na mensalidade.",
+        "categoria_esperada": "financeiro"
+    },
+    {
+        "id": 2,
+        "texto": "A aplicação fecha quando tento abrir os relatórios.",
+        "categoria_esperada": "suporte"
+    },
+    {
+        "id": 3,
+        "texto": "Gostaria de receber uma proposta para contratar dez licenças.",
+        "categoria_esperada": "comercial"
+    },
+    {
+        "id": 4,
+        "texto": "Meu usuário foi desativado e não consigo emitir uma nota fiscal.",
+        "categoria_esperada": "suporte"
+    },
+    {
+        "id": 5,
+        "texto": "O boleto foi pago, porém consta como vencido.",
+        "categoria_esperada": "financeiro"
+    },
+    {
+        "id": 6,
+        "texto": "Quero saber os valores para adicionar outro módulo ao contrato.",
+        "categoria_esperada": "comercial"
+    },
+    {
+        "id": 7,
+        "texto": "O portal apresenta uma tela em branco ao consultar o extrato financeiro.",
+        "categoria_esperada": "suporte"
+    },
+    {
+        "id": 8,
+        "texto": "Solicito o estorno de um valor cobrado indevidamente.",
+        "categoria_esperada": "financeiro"
+    },
+    {
+        "id": 9,
+        "texto": "Quero agendar uma demonstração da plataforma para minha equipe.",
+        "categoria_esperada": "comercial"
+    },
+    {
+        "id": 10,
+        "texto": "O aplicativo não envia o código de verificação para entrar na conta.",
+        "categoria_esperada": "suporte"
+    },
+    {
+        "id": 11,
+        "texto": "Preciso alterar os dados de faturamento da próxima cobrança.",
+        "categoria_esperada": "financeiro"
+    },
+    {
+        "id": 12,
+        "texto": "Estamos avaliando a contratação de um plano empresarial.",
+        "categoria_esperada": "comercial"
+    }
+]

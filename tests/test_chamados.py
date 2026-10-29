@@ -160,3 +160,167 @@ def test_nao_classificar_duas_vezes(client):
     # As duas respostas devem representar o mesmo registro
     assert primeira.json()["id"] == segunda.json()["id"]
     assert segunda.json()["categoria"] == "suporte"
+
+def test_endpoint_prioridade_alta(client):
+    criacao = client.post(
+        "/chamados",
+        json={"descricao": "Sistema corporativo indisponível"}
+    )
+
+    assert criacao.status_code == 201
+    chamado_id = criacao.json()["id"]
+
+    resposta = client.post(
+        f"/chamados/{chamado_id}/avaliar-prioridade",
+        json={
+            "impacto": "critico",
+            "bloqueia_trabalho": True,
+            "solicitacao_rotineira": False
+        }
+    )
+
+    assert resposta.status_code == 200
+
+    dados = resposta.json()
+
+    assert dados["prioridade"] == "alta"
+    assert dados["revisao_humana"] is False
+
+
+def test_endpoint_prioridade_revisao(client):
+    criacao = client.post(
+        "/chamados",
+        json={"descricao": "Problema de acesso ao sistema"}
+    )
+
+    assert criacao.status_code == 201
+    chamado_id = criacao.json()["id"]
+
+    resposta = client.post(
+        f"/chamados/{chamado_id}/avaliar-prioridade",
+        json={
+            "impacto": None,
+            "bloqueia_trabalho": None,
+            "solicitacao_rotineira": None
+        }
+    )
+
+    assert resposta.status_code == 200
+    assert resposta.json()["prioridade"] is None
+    assert resposta.json()["revisao_humana"] is True
+
+
+def test_endpoint_prioridade_chamado_inexistente(client):
+    resposta = client.post(
+        "/chamados/999999/avaliar-prioridade",
+        json={
+            "impacto": "critico",
+            "bloqueia_trabalho": True,
+            "solicitacao_rotineira": False
+        }
+    )
+
+    assert resposta.status_code == 404
+
+from unittest.mock import patch
+
+
+def test_classificacao_preserva_prioridade(client):
+    # Cadastra o chamado
+    criacao = client.post(
+        "/chamados",
+        json={
+            "descricao": "Sistema indisponível para toda a equipe"
+        }
+    )
+
+    assert criacao.status_code == 201
+    chamado_id = criacao.json()["id"]
+
+    # Define a prioridade pelas regras de negócio
+    decisao = client.post(
+        f"/chamados/{chamado_id}/avaliar-prioridade",
+        json={
+            "impacto": "critico",
+            "bloqueia_trabalho": True,
+            "solicitacao_rotineira": False
+        }
+    )
+
+    assert decisao.status_code == 200
+    assert decisao.json()["prioridade"] == "alta"
+
+    # Simula uma classificação posterior do Ollama
+    with patch(
+        "app.services.chamados.analisar_chamado_json",
+        return_value={
+            "categoria": "suporte",
+            "prioridade": "baixa",
+            "resumo": "Sistema indisponível para a equipe"
+        }
+    ):
+        resposta = client.post(
+            f"/chamados/{chamado_id}/classificar"
+        )
+
+    assert resposta.status_code == 200
+
+    # Verifica a prioridade persistida
+    consulta = client.get("/chamados")
+
+    chamado = next(
+        item for item in consulta.json()
+        if item["id"] == chamado_id
+    )
+
+    assert chamado["prioridade"] == "alta"
+    assert chamado["categoria"] == "suporte"
+
+def test_revisao_nao_apaga_prioridade(client):
+    # 1. Criar um chamado
+    criacao = client.post(
+        "/chamados",
+        json={
+            "descricao": "Sistema indisponível para a equipe"
+        }
+    )
+
+    assert criacao.status_code == 201
+    chamado_id = criacao.json()["id"]
+
+    # 2. Definir prioridade pelas regras
+    primeira = client.post(
+        f"/chamados/{chamado_id}/avaliar-prioridade",
+        json={
+            "impacto": "critico",
+            "bloqueia_trabalho": True,
+            "solicitacao_rotineira": False
+        }
+    )
+
+    assert primeira.status_code == 200
+    assert primeira.json()["prioridade"] == "alta"
+
+    # 3. Tentar avaliar sem informações suficientes
+    segunda = client.post(
+        f"/chamados/{chamado_id}/avaliar-prioridade",
+        json={
+            "impacto": None,
+            "bloqueia_trabalho": None,
+            "solicitacao_rotineira": None
+        }
+    )
+
+    assert segunda.status_code == 200
+    assert segunda.json()["revisao_humana"] is True
+    assert segunda.json()["prioridade"] is None
+
+    # 4. Confirmar que o banco preservou a prioridade
+    consulta = client.get("/chamados")
+
+    chamado = next(
+        item for item in consulta.json()
+        if item["id"] == chamado_id
+    )
+
+    assert chamado["prioridade"] == "alta"

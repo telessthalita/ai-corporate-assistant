@@ -3,6 +3,10 @@ from fastapi import Depends, FastAPI, HTTPException
 from pydantic import ValidationError
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
+from app.schemas.chamado import DadosPrioridade, ResultadoPrioridade
+from app.services.motor_decisao import avaliar_prioridade
+from app.repositories.chamados import buscar_chamado
+from app.repositories.chamados import salvar_prioridade
 
 from app.core.database import obter_db
 from app.repositories.chamados import (
@@ -141,3 +145,45 @@ def classificar_chamado_existente(
         )
 
     return chamado
+
+
+@app.post(
+    "/chamados/{chamado_id}/avaliar-prioridade",
+    response_model=ResultadoPrioridade
+)
+def avaliar_prioridade_chamado(
+    chamado_id: int,
+    dados: DadosPrioridade,
+    db: Session = Depends(obter_db)
+):
+    chamado = buscar_chamado(db, chamado_id)
+
+    if chamado is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Chamado não encontrado"
+        )
+
+  
+    resultado = avaliar_prioridade(
+        impacto=dados.impacto,
+        bloqueia_trabalho=dados.bloqueia_trabalho,
+        solicitacao_rotineira=dados.solicitacao_rotineira
+    )
+
+    if resultado["revisao_humana"]:
+        return resultado
+
+    try:
+        salvar_prioridade(
+            db=db,
+            chamado=chamado,
+            prioridade=resultado["prioridade"]
+        )
+    except SQLAlchemyError:
+        raise HTTPException(
+            status_code=503,
+            detail="Não foi possível salvar a prioridade"
+        )
+
+    return resultado

@@ -52,3 +52,18 @@ class ChamadoResposta(BaseModel):
     prioridade: str | None
     status: str
     criado_em: datetime
+
+from typing import Literal
+
+
+class DadosPrioridade(BaseModel):
+    impacto: Literal["baixo", "moderado", "critico"] | None = None
+    bloqueia_trabalho: bool | None = None
+    solicitacao_rotineira: bool | None = None
+
+
+class ResultadoPrioridade(BaseModel):
+    prioridade: Literal["baixa", "media", "alta"] | None
+    revisao_humana: bool
+    motivo: str
+

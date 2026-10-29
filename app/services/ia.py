@@ -4,6 +4,7 @@ import os
 
 import requests
 from dotenv import load_dotenv
+from pathlib import Path
 
 load_dotenv()
 
@@ -78,10 +79,37 @@ Chamado:
 """
 
 
-def analisar_chamado_json(texto: str) -> dict:
+RAIZ_PROJETO = Path(__file__).resolve().parents[2]
+
+
+def carregar_prompt_ativo() -> str:
+    versao = os.getenv("PROMPT_VERSION", "v1").lower()
+
+    if versao not in ("v1", "v2"):
+        raise ValueError(
+            f"Versão de prompt inválida: {versao}"
+        )
+
+    caminho = (
+        RAIZ_PROJETO
+        / "prompts"
+        / f"classificacao_{versao}.txt"
+    )
+
+    return caminho.read_text(encoding="utf-8")
+
+
+def analisar_chamado_json(
+    texto: str,
+    prompt_base: str | None = None
+) -> dict:
+
+    if prompt_base is None:
+        prompt_base = carregar_prompt_ativo()
+
     dados = {
         "model": OLLAMA_MODEL,
-        "prompt": PROMPT_BASE + texto,
+        "prompt": prompt_base + "\n" + texto,
         "format": "json",
         "stream": False,
         "options": {

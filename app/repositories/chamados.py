@@ -45,9 +45,25 @@ def atualizar_classificacao(
 ):
     chamado.categoria = categoria
 
-    # A prioridade do LLM ainda não é confiável.
-    chamado.prioridade = None
+    # A classificação da IA não altera prioridades existentes.
+    #Somente o motor de regras pode definir esse campo.
     chamado.status = "revisao"
+
+    try:
+        db.commit()
+        db.refresh(chamado)
+    except Exception:
+        db.rollback()
+        raise
+
+    return chamado
+
+def salvar_prioridade(
+    db: Session,
+    chamado: Chamado,
+    prioridade: str
+) -> Chamado:
+    chamado.prioridade = prioridade
 
     try:
         db.commit()
