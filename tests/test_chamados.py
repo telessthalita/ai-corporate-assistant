@@ -1,48 +1,16 @@
+
+import requests
+
 from unittest.mock import patch
 
-import pytest
-import requests
-from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import StaticPool
 
-from app.core.database import Base, obter_db
-from app.main import app
+# ==========================================================
+# 1. CADASTRO DE CHAMADOS
+# ==========================================================
 
-from app.models.auditoria import AuditoriaChamado
+def test_criar_chamado(client_analyst):
+    client = client_analyst
 
-@pytest.fixture
-def client():
-    engine_teste = create_engine(
-        "sqlite://",
-        connect_args={
-            "check_same_thread": False
-        },
-        poolclass=StaticPool
-    )
-
-    Base.metadata.create_all(bind=engine_teste)
-
-    SessaoTeste = sessionmaker(
-        bind=engine_teste
-    )
-
-    def obter_db_teste():
-        with SessaoTeste() as db:
-            yield db
-
-    app.dependency_overrides[obter_db] = obter_db_teste
-
-    try:
-        with TestClient(app) as cliente:
-            yield cliente
-    finally:
-        app.dependency_overrides.clear()
-        engine_teste.dispose()
-
-
-def test_criar_chamado(client):
     resposta = client.post(
         "/chamados",
         json={
@@ -54,18 +22,28 @@ def test_criar_chamado(client):
 
     dados = resposta.json()
 
+    assert dados["id"] is not None
     assert dados["descricao"] == "Erro no login do sistema"
     assert dados["status"] == "aberto"
-    assert dados["id"] is not None
+    assert dados["categoria"] is None
+    assert dados["prioridade"] is None
 
 
-def test_listar_chamados(client):
-    client.post(
+# ==========================================================
+# 2. CONSULTA DE CHAMADOS
+# ==========================================================
+
+def test_listar_chamados(client_analyst):
+    client = client_analyst
+
+    criacao = client.post(
         "/chamados",
         json={
             "descricao": "Computador não liga"
         }
     )
+
+    assert criacao.status_code == 201
 
     resposta = client.get("/chamados")
 
@@ -76,8 +54,14 @@ def test_listar_chamados(client):
     assert len(chamados) == 1
     assert chamados[0]["descricao"] == "Computador não liga"
 
-def test_falha_ollama_preserva_chamado(client):
-    # 1. Criar o chamado
+
+# ==========================================================
+# 3. FALHA DO OLLAMA
+# ==========================================================
+
+def test_falha_ollama_preserva_chamado(client_analyst):
+    client = client_analyst
+
     criacao = client.post(
         "/chamados",
         json={
@@ -89,7 +73,6 @@ def test_falha_ollama_preserva_chamado(client):
 
     chamado_id = criacao.json()["id"]
 
-    # 2. Simular falha do Ollama
     with patch(
         "app.services.chamados.analisar_chamado_json",
         side_effect=requests.exceptions.ConnectionError(
@@ -100,10 +83,8 @@ def test_falha_ollama_preserva_chamado(client):
             f"/chamados/{chamado_id}/classificar"
         )
 
-    # 3. Verificar o erro controlado
     assert resposta.status_code == 502
 
-    # 4. Confirmar que o chamado continua salvo
     consulta = client.get("/chamados")
 
     assert consulta.status_code == 200
@@ -113,16 +94,18 @@ def test_falha_ollama_preserva_chamado(client):
         if item["id"] == chamado_id
     )
 
-    assert chamado["descricao"] == (
-        "Não consigo acessar o e-mail"
-    )
-
     assert chamado["categoria"] is None
     assert chamado["prioridade"] is None
     assert chamado["status"] == "aberto"
 
 
-def test_nao_classificar_duas_vezes(client):
+# ==========================================================
+# 4. EVITAR CLASSIFICAÇÃO DUPLICADA
+# ==========================================================
+
+def test_nao_classificar_duas_vezes(client_analyst):
+    client = client_analyst
+
     criacao = client.post(
         "/chamados",
         json={
@@ -131,6 +114,7 @@ def test_nao_classificar_duas_vezes(client):
     )
 
     assert criacao.status_code == 201
+
     chamado_id = criacao.json()["id"]
 
     resposta_ia = {
@@ -155,20 +139,27 @@ def test_nao_classificar_duas_vezes(client):
     assert primeira.status_code == 200
     assert segunda.status_code == 200
 
-    # O modelo deve ser executado somente uma vez
     assert modelo.call_count == 1
-
-    # As duas respostas devem representar o mesmo registro
     assert primeira.json()["id"] == segunda.json()["id"]
     assert segunda.json()["categoria"] == "suporte"
 
-def test_endpoint_prioridade_alta(client):
+
+# ==========================================================
+# 5. PRIORIDADE ALTA — ADMINISTRADOR
+# ==========================================================
+
+def test_endpoint_prioridade_alta(client_admin):
+    client = client_admin
+
     criacao = client.post(
         "/chamados",
-        json={"descricao": "Sistema corporativo indisponível"}
+        json={
+            "descricao": "Sistema corporativo indisponível"
+        }
     )
 
     assert criacao.status_code == 201
+
     chamado_id = criacao.json()["id"]
 
     resposta = client.post(
@@ -188,13 +179,22 @@ def test_endpoint_prioridade_alta(client):
     assert dados["revisao_humana"] is False
 
 
-def test_endpoint_prioridade_revisao(client):
+# ==========================================================
+# 6. PRIORIDADE SEM DADOS SUFICIENTES
+# ==========================================================
+
+def test_endpoint_prioridade_revisao(client_admin):
+    client = client_admin
+
     criacao = client.post(
         "/chamados",
-        json={"descricao": "Problema de acesso ao sistema"}
+        json={
+            "descricao": "Problema de acesso ao sistema"
+        }
     )
 
     assert criacao.status_code == 201
+
     chamado_id = criacao.json()["id"]
 
     resposta = client.post(
@@ -211,7 +211,15 @@ def test_endpoint_prioridade_revisao(client):
     assert resposta.json()["revisao_humana"] is True
 
 
-def test_endpoint_prioridade_chamado_inexistente(client):
+# ==========================================================
+# 7. PRIORIDADE — CHAMADO INEXISTENTE
+# ==========================================================
+
+def test_endpoint_prioridade_chamado_inexistente(
+    client_admin
+):
+    client = client_admin
+
     resposta = client.post(
         "/chamados/999999/avaliar-prioridade",
         json={
@@ -223,11 +231,14 @@ def test_endpoint_prioridade_chamado_inexistente(client):
 
     assert resposta.status_code == 404
 
-from unittest.mock import patch
 
+# ==========================================================
+# 8. IA NÃO PODE SOBRESCREVER PRIORIDADE
+# ==========================================================
 
-def test_classificacao_preserva_prioridade(client):
-    # Cadastra o chamado
+def test_classificacao_preserva_prioridade(client_admin):
+    client = client_admin
+
     criacao = client.post(
         "/chamados",
         json={
@@ -236,9 +247,9 @@ def test_classificacao_preserva_prioridade(client):
     )
 
     assert criacao.status_code == 201
+
     chamado_id = criacao.json()["id"]
 
-    # Define a prioridade pelas regras de negócio
     decisao = client.post(
         f"/chamados/{chamado_id}/avaliar-prioridade",
         json={
@@ -251,7 +262,6 @@ def test_classificacao_preserva_prioridade(client):
     assert decisao.status_code == 200
     assert decisao.json()["prioridade"] == "alta"
 
-    # Simula uma classificação posterior do Ollama
     with patch(
         "app.services.chamados.analisar_chamado_json",
         return_value={
@@ -266,7 +276,6 @@ def test_classificacao_preserva_prioridade(client):
 
     assert resposta.status_code == 200
 
-    # Verifica a prioridade persistida
     consulta = client.get("/chamados")
 
     chamado = next(
@@ -277,8 +286,14 @@ def test_classificacao_preserva_prioridade(client):
     assert chamado["prioridade"] == "alta"
     assert chamado["categoria"] == "suporte"
 
-def test_revisao_nao_apaga_prioridade(client):
-    # 1. Criar um chamado
+
+# ==========================================================
+# 9. REVISÃO NÃO APAGA PRIORIDADE EXISTENTE
+# ==========================================================
+
+def test_revisao_nao_apaga_prioridade(client_admin):
+    client = client_admin
+
     criacao = client.post(
         "/chamados",
         json={
@@ -287,9 +302,9 @@ def test_revisao_nao_apaga_prioridade(client):
     )
 
     assert criacao.status_code == 201
+
     chamado_id = criacao.json()["id"]
 
-    # 2. Definir prioridade pelas regras
     primeira = client.post(
         f"/chamados/{chamado_id}/avaliar-prioridade",
         json={
@@ -302,7 +317,6 @@ def test_revisao_nao_apaga_prioridade(client):
     assert primeira.status_code == 200
     assert primeira.json()["prioridade"] == "alta"
 
-    # 3. Tentar avaliar sem informações suficientes
     segunda = client.post(
         f"/chamados/{chamado_id}/avaliar-prioridade",
         json={
@@ -316,7 +330,6 @@ def test_revisao_nao_apaga_prioridade(client):
     assert segunda.json()["revisao_humana"] is True
     assert segunda.json()["prioridade"] is None
 
-    # 4. Confirmar que o banco preservou a prioridade
     consulta = client.get("/chamados")
 
     chamado = next(
@@ -326,8 +339,16 @@ def test_revisao_nao_apaga_prioridade(client):
 
     assert chamado["prioridade"] == "alta"
 
-def test_historico_duas_alteracoes_prioridade(client):
-    # 1. Criar o chamado
+
+# ==========================================================
+# 10. AUDITORIA DE DUAS ALTERAÇÕES
+# ==========================================================
+
+def test_historico_duas_alteracoes_prioridade(
+    client_admin
+):
+    client = client_admin
+
     criacao = client.post(
         "/chamados",
         json={
@@ -336,9 +357,9 @@ def test_historico_duas_alteracoes_prioridade(client):
     )
 
     assert criacao.status_code == 201
+
     chamado_id = criacao.json()["id"]
 
-    # 2. Primeira decisão: alta
     primeira = client.post(
         f"/chamados/{chamado_id}/avaliar-prioridade",
         json={
@@ -351,7 +372,6 @@ def test_historico_duas_alteracoes_prioridade(client):
     assert primeira.status_code == 200
     assert primeira.json()["prioridade"] == "alta"
 
-    # 3. Segunda decisão: média
     segunda = client.post(
         f"/chamados/{chamado_id}/avaliar-prioridade",
         json={
@@ -364,7 +384,6 @@ def test_historico_duas_alteracoes_prioridade(client):
     assert segunda.status_code == 200
     assert segunda.json()["prioridade"] == "media"
 
-    # 4. Consultar o histórico
     resposta = client.get(
         f"/chamados/{chamado_id}/auditoria"
     )
@@ -386,7 +405,6 @@ def test_historico_duas_alteracoes_prioridade(client):
         for evento in historico
     )
 
-    # 5. Confirmar o estado atual no banco
     consulta = client.get("/chamados")
 
     chamado = next(

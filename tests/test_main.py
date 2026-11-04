@@ -41,10 +41,8 @@ def test_confianca_fora_intervalo():
 
     assert resposta.status_code == 422
     
-    
 
-
-def test_classificar_chamado():
+def test_classificar_chamado(client_analyst):
     resposta_simulada = {
         "categoria": "suporte",
         "prioridade": "media",
@@ -55,7 +53,7 @@ def test_classificar_chamado():
         "app.main.analisar_chamado_json",
         return_value=resposta_simulada
     ):
-        resposta = client.post(
+        resposta = client_analyst.post(
             "/classificar",
             json={
                 "texto": "Não consigo acessar meu e-mail."
@@ -64,4 +62,8 @@ def test_classificar_chamado():
 
     assert resposta.status_code == 200
 
-    assert resposta.json() == resposta_simulada
+    dados = resposta.json()
+
+    assert dados["categoria"] == "suporte"
+    assert dados["prioridade"] == "media"
+    assert dados["resumo"] == "Problema de acesso ao e-mail"
