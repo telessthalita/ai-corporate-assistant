@@ -5,6 +5,7 @@ from fastapi import Depends, FastAPI, HTTPException
 from pydantic import ValidationError
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
+from app.core.monitoramento import monitorar_operacao
 
 # Banco de dados
 from app.core.database import obter_db
@@ -89,12 +90,13 @@ def classificar_chamado(
     perfil: str = Depends(autenticar_usuario),
 ):
     try:
-        dados = analisar_chamado_json(chamado.texto)
-
-        classificacao = (
-            ClassificacaoChamado.model_validate(dados)
+        dados = monitorar_operacao(
+            "classificacao_ia",
+            analisar_chamado_json,
+            chamado.texto
         )
 
+        classificacao = ClassificacaoChamado.model_validate(dados)
         return classificacao.model_dump()
 
     except ValidationError:
@@ -167,10 +169,13 @@ def classificar_chamado_existente(
     db: Session = Depends(obter_db),
 ):
     try:
-        chamado = classificar_chamado_salvo(
+        chamado = monitorar_operacao(
+            "classificacao_chamado_salvo",
+            classificar_chamado_salvo,
             db,
-            chamado_id,
-        )
+            chamado_id
+)
+
 
     except ValidationError:
         raise HTTPException(

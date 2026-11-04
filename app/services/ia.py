@@ -5,6 +5,7 @@ import os
 import requests
 from dotenv import load_dotenv
 from pathlib import Path
+from app.core.monitoramento import monitorar_operacao
 
 load_dotenv()
 
@@ -128,3 +129,12 @@ def analisar_chamado_json(
     resultado = resposta.json()["response"]
 
     return json.loads(resultado)
+
+def analisar_chamado_monitorado(texto, prompt_base=None):
+    return monitorar_operacao(
+        "classificacao_ia",
+        analisar_chamado_json,
+        texto,
+        prompt_base=prompt_base,
+    )
+
