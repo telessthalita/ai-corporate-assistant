@@ -121,7 +121,7 @@ def analisar_chamado_json(
     resposta = requests.post(
         OLLAMA_URL,
         json=dados,
-        timeout=120
+        timeout=60
     )
 
     resposta.raise_for_status()
