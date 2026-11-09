@@ -96,3 +96,88 @@ flowchart TD
     D -.-> I[Logs estruturados JSON]
     E -.-> I
 ```
+
+## Demonstração da API
+
+A aplicação oferece documentação interativa pelo Swagger:
+
+http://127.0.0.1:8000/docs
+
+### 1. Cadastrar um chamado
+
+**Endpoint:** `POST /chamados`
+
+Requer autenticação Bearer com perfil `admin` ou `analyst`.
+
+Requisição:
+
+```json
+{
+  "descricao": "Não consigo acessar meu e-mail corporativo."
+}
+```
+
+Resposta ilustrativa:
+
+```json
+{
+  "id": 1,
+  "descricao": "Não consigo acessar meu e-mail corporativo.",
+  "categoria": null,
+  "prioridade": null,
+  "status": "aberto",
+  "criado_em": "2026-11-09T10:00:00"
+}
+```
+
+### 2. Classificar com IA
+
+**Endpoint:** `POST /chamados/1/classificar`
+
+Requer autenticação Bearer.
+
+A API utiliza um modelo Qwen 2.5 executado localmente pelo Ollama para classificar o chamado.
+
+Exemplo de resposta ilustrativa:
+
+```json
+{
+  "id": 1,
+  "descricao": "Não consigo acessar meu e-mail corporativo.",
+  "categoria": "suporte",
+  "prioridade": null,
+  "status": "revisao",
+  "criado_em": "2026-11-09T10:00:00"
+}
+```
+
+A IA sugere a categoria, mas não define diretamente a prioridade persistida.
+
+### 3. Avaliar prioridade
+
+**Endpoint:** `POST /chamados/1/avaliar-prioridade`
+
+Requer perfil `admin`.
+
+Requisição:
+
+```json
+{
+  "impacto": "critico",
+  "bloqueia_trabalho": true,
+  "solicitacao_rotineira": false
+}
+```
+
+Resposta ilustrativa:
+
+```json
+{
+  "prioridade": "alta",
+  "revisao_humana": false,
+  "motivo": "Impacto crítico"
+}
+```
+
+A prioridade é definida pelo motor de regras, e suas alterações são registradas no histórico de auditoria.
+```
