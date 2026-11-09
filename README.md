@@ -79,3 +79,20 @@ A suíte de testes utiliza Pytest e cobre:
 ## Finalidade
 
 Projeto educacional e de portfólio voltado ao desenvolvimento de competências em Engenharia de IA, integração de LLMs, APIs, bancos de dados, testes e observabilidade.
+
+
+## Diagrama de arquitetura
+
+```mermaid
+flowchart TD
+    A[Cliente HTTP / Swagger] --> B[FastAPI]
+    B --> C[Autenticacao e autorizacao]
+    C --> D[Camada de servicos]
+    D --> E[Ollama - Qwen 2.5]
+    D --> F[Motor de regras]
+    D --> G[Repositorios]
+    G --> H[(PostgreSQL - Supabase)]
+    F --> G
+    D -.-> I[Logs estruturados JSON]
+    E -.-> I
+```
